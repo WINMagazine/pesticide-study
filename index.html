@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Iowa Pesticide Applicator Exam — Study App</title>
+<style>
+:root{--primary:#1a5e1f;--primary-light:#2d8a33;--primary-dark:#0f3d13;--accent:#f59e0b;--bg:#f5f7f5;--card:#fff;--text:#1a1a1a;--text-light:#555;--correct:#16a34a;--wrong:#dc2626;--border:#e0e0e0;--radius:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;-webkit-tap-highlight-color:transparent}
+.container{max-width:600px;margin:0 auto;padding:16px}
+h1{font-size:1.3rem;text-align:center;color:var(--primary-dark);margin-bottom:4px}
+.subtitle{text-align:center;color:var(--text-light);font-size:.85rem;margin-bottom:20px}
+.badge{display:inline-block;background:var(--primary);color:#fff;font-size:.7rem;padding:2px 8px;border-radius:10px;margin-left:4px}
+
+/* Progress bars on home */
+.progress-section{margin-bottom:20px}
+.progress-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.progress-label{font-size:.8rem;font-weight:600;min-width:50px;color:var(--primary-dark)}
+.progress-bar{flex:1;height:12px;background:#e5e7eb;border-radius:6px;overflow:hidden}
+.progress-fill{height:100%;border-radius:6px;transition:width .3s}
+.progress-fill.core{background:linear-gradient(90deg,#16a34a,#22c55e)}
+.progress-fill.turf{background:linear-gradient(90deg,#2563eb,#60a5fa)}
+.progress-pct{font-size:.8rem;font-weight:600;min-width:36px;text-align:right}
+
+/* Mode buttons */
+.modes{display:flex;flex-direction:column;gap:10px}
+.mode-btn{display:flex;align-items:center;gap:12px;padding:16px;background:var(--card);border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .15s;text-align:left}
+.mode-btn:hover,.mode-btn:active{border-color:var(--primary);transform:scale(1.01)}
+.mode-icon{font-size:1.6rem;min-width:36px;text-align:center}
+.mode-info h3{font-size:.95rem;margin-bottom:2px}
+.mode-info p{font-size:.78rem;color:var(--text-light)}
+
+/* Header bar */
+.header-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.back-btn{background:none;border:none;font-size:1.4rem;cursor:pointer;padding:4px 8px;color:var(--primary-dark)}
+.header-title{font-size:1rem;font-weight:700;color:var(--primary-dark)}
+.header-right{font-size:.8rem;color:var(--text-light);min-width:60px;text-align:right}
+
+/* Flashcard */
+.flashcard-container{perspective:1000px;margin-bottom:16px}
+.flashcard{position:relative;width:100%;min-height:280px;cursor:pointer;transform-style:preserve-3d;transition:transform .5s}
+.flashcard.flipped{transform:rotateY(180deg)}
+.flashcard-face{position:absolute;top:0;left:0;width:100%;min-height:280px;backface-visibility:hidden;border-radius:var(--radius);padding:24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.flashcard-front{background:var(--card);border:2px solid var(--border)}
+.flashcard-back{background:#f0fdf4;border:2px solid var(--correct);transform:rotateY(180deg)}
+.flashcard-q{font-size:1.05rem;line-height:1.5;font-weight:500}
+.flashcard-a{font-size:1rem;line-height:1.5;color:var(--primary-dark);font-weight:600;margin-bottom:8px}
+.flashcard-explain{font-size:.82rem;color:var(--text-light);line-height:1.4}
+.flashcard-hint{font-size:.75rem;color:#aaa;margin-top:12px}
+.card-nav{display:flex;gap:10px;justify-content:center;margin-bottom:12px}
+.card-nav button{padding:10px 24px;border:none;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer}
+.card-nav .knew{background:#dcfce7;color:var(--correct)}
+.card-nav .didnt{background:#fef2f2;color:var(--wrong)}
+.card-counter{text-align:center;font-size:.8rem;color:var(--text-light)}
+.card-shuffle{text-align:center;margin-top:8px}
+.card-shuffle button{background:none;border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:.78rem;cursor:pointer;color:var(--text-light)}
+
+/* Quiz */
+.quiz-progress{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.quiz-bar{flex:1;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden}
+.quiz-bar-fill{height:100%;background:var(--primary);transition:width .3s;border-radius:3px}
+.quiz-qnum{font-size:.8rem;color:var(--text-light);white-space:nowrap}
+.quiz-question{font-size:1.05rem;line-height:1.5;font-weight:500;margin-bottom:16px;padding:16px;background:var(--card);border-radius:var(--radius);border:1px solid var(--border)}
+.quiz-choices{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.quiz-choice{padding:14px 16px;background:var(--card);border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:.93rem;line-height:1.4;transition:all .15s;display:flex;gap:10px;align-items:flex-start}
+.quiz-choice:hover{border-color:var(--primary-light)}
+.quiz-choice.selected{border-color:var(--primary);background:#f0fdf4}
+.quiz-choice.locked{cursor:default}
+.quiz-choice .letter{font-weight:700;color:var(--primary);min-width:20px}
+.quiz-next{width:100%;padding:14px;border:none;border-radius:var(--radius);background:var(--primary);color:#fff;font-size:1rem;font-weight:600;cursor:pointer}
+.quiz-next:disabled{background:#ccc;cursor:default}
+
+/* Results */
+.results{text-align:center;padding:20px}
+.results-score{font-size:3rem;font-weight:800;margin:12px 0}
+.results-score.pass{color:var(--correct)}
+.results-score.fail{color:var(--wrong)}
+.results-verdict{font-size:1.2rem;font-weight:700;margin-bottom:4px}
+.results-detail{font-size:.9rem;color:var(--text-light);margin-bottom:20px}
+.results-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:24px}
+.results-actions button{padding:12px 20px;border:none;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer}
+.btn-retake{background:var(--primary);color:#fff}
+.btn-review{background:#f0fdf4;color:var(--primary-dark);border:1px solid var(--primary) !important}
+.btn-home{background:#f5f5f5;color:var(--text)}
+
+/* Missed questions review */
+.missed-list{text-align:left}
+.missed-item{padding:14px;margin-bottom:10px;background:var(--card);border-radius:var(--radius);border-left:4px solid var(--wrong)}
+.missed-q{font-weight:600;font-size:.9rem;margin-bottom:6px}
+.missed-your{color:var(--wrong);font-size:.82rem;margin-bottom:2px}
+.missed-correct{color:var(--correct);font-size:.82rem;font-weight:600;margin-bottom:4px}
+.missed-explain{font-size:.78rem;color:var(--text-light)}
+
+/* Footer */
+.footer{text-align:center;padding:20px 0;font-size:.7rem;color:#bbb;margin-top:20px}
+.footer a{color:var(--primary-light)}
+
+/* Reset btn */
+.reset-section{text-align:center;margin-top:16px}
+.reset-btn{background:none;border:1px solid #e5e7eb;border-radius:6px;padding:6px 14px;font-size:.75rem;color:#999;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="container" id="app"></div>
+<script src="questions.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const app = $('#app');
+
+// ===== STORAGE =====
+function getProgress(cat) {
+  try { return JSON.parse(localStorage.getItem('pest_' + cat) || '{}'); } catch { return {}; }
+}
+function saveProgress(cat, data) {
+  localStorage.setItem('pest_' + cat, JSON.stringify(data));
+}
+function getMastery(cat) {
+  const p = getProgress(cat);
+  const total = QUESTIONS[cat === 'core' ? 'core' : 'turf3t'].length;
+  if (!total) return 0;
+  const mastered = Object.values(p).filter(v => v >= 2).length;
+  return Math.round(mastered / total * 100);
+}
+
+// ===== SHUFFLE =====
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ===== HOME =====
+function renderHome() {
+  const coreM = getMastery('core');
+  const turfM = getMastery('turf');
+  app.innerHTML = `
+    <h1>Iowa Pesticide Applicator</h1>
+    <p class="subtitle">Ag-Grow Plus Employee Study App</p>
+    <div class="progress-section">
+      <div class="progress-row">
+        <span class="progress-label">Core</span>
+        <div class="progress-bar"><div class="progress-fill core" style="width:${coreM}%"></div></div>
+        <span class="progress-pct">${coreM}%</span>
+      </div>
+      <div class="progress-row">
+        <span class="progress-label">3T Turf</span>
+        <div class="progress-bar"><div class="progress-fill turf" style="width:${turfM}%"></div></div>
+        <span class="progress-pct">${turfM}%</span>
+      </div>
+    </div>
+    <div class="modes">
+      <div class="mode-btn" onclick="startStudy('core')">
+        <span class="mode-icon">📚</span>
+        <div class="mode-info"><h3>Study Core</h3><p>Flashcards — Core exam questions only</p></div>
+      </div>
+      <div class="mode-btn" onclick="startStudy('turf')">
+        <span class="mode-icon">📚</span>
+        <div class="mode-info"><h3>Study 3T Turf</h3><p>Flashcards — 3T Turf questions only</p></div>
+      </div>
+      <div class="mode-btn" onclick="startQuiz('core')">
+        <span class="mode-icon">📝</span>
+        <div class="mode-info"><h3>Practice Test: Core</h3><p>50 questions — simulates real Core exam</p></div>
+      </div>
+      <div class="mode-btn" onclick="startQuiz('turf')">
+        <span class="mode-icon">📝</span>
+        <div class="mode-info"><h3>Practice Test: 3T</h3><p>35 questions — simulates real 3T exam</p></div>
+      </div>
+      <div class="mode-btn" onclick="startQuiz('mixed')">
+        <span class="mode-icon">🔀</span>
+        <div class="mode-info"><h3>Mixed Practice Test</h3><p>Both Core + 3T combined</p></div>
+      </div>
+    </div>
+    <div class="reset-section"><button class="reset-btn" onclick="resetProgress()">Reset All Progress</button></div>
+    <div class="footer">
+      Iowa Pesticide Applicator Exam Study App<br>
+      Built for <strong>Ag-Grow Plus</strong> employees<br>
+      <a href="https://iowaagriculture.gov/pesticide-bureau/applicator-licensing-certification" target="_blank">IDALS Exam Info</a> ·
+      <a href="https://www.extension.iastate.edu/psep/" target="_blank">ISU Extension PSEP</a><br>
+      Core: ${QUESTIONS.core.length} questions · 3T: ${QUESTIONS.turf3t.length} questions
+    </div>`;
+}
+
+function resetProgress() {
+  if (confirm('Reset all study progress? This cannot be undone.')) {
+    localStorage.removeItem('pest_core');
+    localStorage.removeItem('pest_turf');
+    renderHome();
+  }
+}
+
+// ===== FLASHCARD MODE =====
+let studyCat, studyCards, studyIdx, studyFlipped;
+
+function startStudy(cat) {
+  studyCat = cat;
+  const src = cat === 'core' ? QUESTIONS.core : QUESTIONS.turf3t;
+  studyCards = shuffle(src.map((q, i) => ({ ...q, idx: i })));
+  studyIdx = 0;
+  studyFlipped = false;
+  renderFlashcard();
+}
+
+function renderFlashcard() {
+  if (studyIdx >= studyCards.length) {
+    // Done with deck
+    app.innerHTML = `
+      <div class="header-bar">
+        <button class="back-btn" onclick="renderHome()">←</button>
+        <span class="header-title">${studyCat === 'core' ? 'Core' : '3T Turf'} Study</span>
+        <span class="header-right"></span>
+      </div>
+      <div class="results">
+        <p style="font-size:2rem;margin-bottom:12px">🎉</p>
+        <p class="results-verdict">Deck Complete!</p>
+        <p class="results-detail">You've gone through all cards. Shuffle and go again to reinforce.</p>
+        <div class="results-actions">
+          <button class="btn-retake" onclick="startStudy('${studyCat}')">Shuffle & Restart</button>
+          <button class="btn-home" onclick="renderHome()">Home</button>
+        </div>
+      </div>`;
+    return;
+  }
+  const card = studyCards[studyIdx];
+  const correctText = card.choices[card.answer];
+  app.innerHTML = `
+    <div class="header-bar">
+      <button class="back-btn" onclick="renderHome()">←</button>
+      <span class="header-title">${studyCat === 'core' ? 'Core' : '3T Turf'} Study</span>
+      <span class="header-right">${getMastery(studyCat)}% mastered</span>
+    </div>
+    <div class="flashcard-container">
+      <div class="flashcard${studyFlipped ? ' flipped' : ''}" onclick="flipCard()">
+        <div class="flashcard-face flashcard-front">
+          <p class="flashcard-q">${card.q}</p>
+          <p class="flashcard-hint">Tap to reveal answer</p>
+        </div>
+        <div class="flashcard-face flashcard-back">
+          <p class="flashcard-a">${correctText}</p>
+          <p class="flashcard-explain">${card.explanation || ''}</p>
+        </div>
+      </div>
+    </div>
+    <div class="card-nav">
+      <button class="didnt" onclick="markCard(false)">✗ Didn't Know</button>
+      <button class="knew" onclick="markCard(true)">✓ Knew It</button>
+    </div>
+    <div class="card-counter">Card ${studyIdx + 1} of ${studyCards.length}</div>
+    <div class="card-shuffle"><button onclick="startStudy('${studyCat}')">🔀 Reshuffle Deck</button></div>`;
+}
+
+function flipCard() {
+  studyFlipped = !studyFlipped;
+  const el = document.querySelector('.flashcard');
+  if (el) el.classList.toggle('flipped', studyFlipped);
+}
+
+function markCard(knew) {
+  const card = studyCards[studyIdx];
+  const prog = getProgress(studyCat);
+  const key = String(card.idx);
+  if (knew) {
+    prog[key] = (prog[key] || 0) + 1;
+  } else {
+    prog[key] = 0;
+  }
+  saveProgress(studyCat, prog);
+  studyIdx++;
+  studyFlipped = false;
+  renderFlashcard();
+}
+
+// ===== QUIZ MODE =====
+let quizCat, quizQuestions, quizIdx, quizAnswers, quizSelected;
+
+function startQuiz(cat) {
+  quizCat = cat;
+  let pool, count;
+  if (cat === 'core') {
+    pool = QUESTIONS.core;
+    count = 50;
+  } else if (cat === 'turf') {
+    pool = QUESTIONS.turf3t;
+    count = 35;
+  } else {
+    pool = [...QUESTIONS.core, ...QUESTIONS.turf3t];
+    count = 50;
+  }
+  quizQuestions = shuffle(pool).slice(0, Math.min(count, pool.length));
+  quizIdx = 0;
+  quizAnswers = [];
+  quizSelected = -1;
+  renderQuizQuestion();
+}
+
+function renderQuizQuestion() {
+  if (quizIdx >= quizQuestions.length) {
+    renderResults();
+    return;
+  }
+  const q = quizQuestions[quizIdx];
+  const letters = ['A', 'B', 'C', 'D'];
+  const pct = Math.round(quizIdx / quizQuestions.length * 100);
+  const catLabel = quizCat === 'core' ? 'Core Exam' : quizCat === 'turf' ? '3T Exam' : 'Mixed Exam';
+  quizSelected = -1;
+  app.innerHTML = `
+    <div class="header-bar">
+      <button class="back-btn" onclick="if(confirm('Quit this practice test?'))renderHome()">←</button>
+      <span class="header-title">${catLabel}</span>
+      <span class="header-right"></span>
+    </div>
+    <div class="quiz-progress">
+      <span class="quiz-qnum">Q ${quizIdx + 1} of ${quizQuestions.length}</span>
+      <div class="quiz-bar"><div class="quiz-bar-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="quiz-question">${q.q}</div>
+    <div class="quiz-choices">
+      ${q.choices.map((c, i) => `
+        <div class="quiz-choice" onclick="selectChoice(${i})" id="choice-${i}">
+          <span class="letter">${letters[i]}</span>
+          <span>${c}</span>
+        </div>`).join('')}
+    </div>
+    <button class="quiz-next" id="next-btn" disabled onclick="nextQuestion()">Next Question</button>`;
+}
+
+function selectChoice(i) {
+  if (quizSelected >= 0) return;
+  quizSelected = i;
+  document.querySelectorAll('.quiz-choice').forEach((el, idx) => {
+    el.classList.add('locked');
+    if (idx === i) el.classList.add('selected');
+  });
+  document.getElementById('next-btn').disabled = false;
+  if (quizIdx === quizQuestions.length - 1) {
+    document.getElementById('next-btn').textContent = 'See Results';
+  }
+}
+
+function nextQuestion() {
+  quizAnswers.push(quizSelected);
+  quizIdx++;
+  renderQuizQuestion();
+}
+
+// ===== RESULTS =====
+function renderResults() {
+  let correct = 0;
+  const missed = [];
+  quizQuestions.forEach((q, i) => {
+    if (quizAnswers[i] === q.answer) {
+      correct++;
+    } else {
+      missed.push({ q, userAnswer: quizAnswers[i], idx: i + 1 });
+    }
+  });
+  const total = quizQuestions.length;
+  const pct = Math.round(correct / total * 100);
+  const pass = pct >= 80;
+  const catLabel = quizCat === 'core' ? 'Core Exam' : quizCat === 'turf' ? '3T Exam' : 'Mixed Exam';
+  const letters = ['A', 'B', 'C', 'D'];
+
+  app.innerHTML = `
+    <div class="header-bar">
+      <button class="back-btn" onclick="renderHome()">←</button>
+      <span class="header-title">${catLabel} Results</span>
+      <span class="header-right"></span>
+    </div>
+    <div class="results">
+      <div class="results-score ${pass ? 'pass' : 'fail'}">${pct}%</div>
+      <div class="results-verdict" style="color:${pass ? 'var(--correct)' : 'var(--wrong)'}">
+        ${pass ? '✓ PASSING SCORE' : '✗ NOT PASSING'}
+      </div>
+      <div class="results-detail">
+        ${correct} of ${total} correct · Iowa requires 80% to pass
+        ${missed.length > 0 ? `<br>${missed.length} question${missed.length > 1 ? 's' : ''} missed` : ''}
+      </div>
+      <div class="results-actions">
+        <button class="btn-retake" onclick="startQuiz('${quizCat}')">Retake Test</button>
+        ${missed.length > 0 ? `<button class="btn-review" onclick="document.getElementById('missed-section').style.display='block';this.style.display='none'">Review Missed Questions</button>` : ''}
+        <button class="btn-home" onclick="renderHome()">Home</button>
+      </div>
+    </div>
+    <div class="missed-list" id="missed-section" style="display:none">
+      <h3 style="margin-bottom:12px;font-size:.95rem">Missed Questions (${missed.length})</h3>
+      ${missed.map(m => `
+        <div class="missed-item">
+          <div class="missed-q">Q${m.idx}: ${m.q.q}</div>
+          <div class="missed-your">Your answer: ${m.userAnswer >= 0 && m.userAnswer < m.q.choices.length ? letters[m.userAnswer] + ') ' + m.q.choices[m.userAnswer] : 'No answer'}</div>
+          <div class="missed-correct">Correct: ${letters[m.q.answer]}) ${m.q.choices[m.q.answer]}</div>
+          <div class="missed-explain">${m.q.explanation || ''}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ===== INIT =====
+renderHome();
+</script>
+</body>
+</html>
