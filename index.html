@@ -328,11 +328,9 @@ function renderQuizQuestion() {
 }
 
 function selectChoice(i) {
-  if (quizSelected >= 0) return;
   quizSelected = i;
   document.querySelectorAll('.quiz-choice').forEach((el, idx) => {
-    el.classList.add('locked');
-    if (idx === i) el.classList.add('selected');
+    el.classList.toggle('selected', idx === i);
   });
   document.getElementById('next-btn').disabled = false;
   if (quizIdx === quizQuestions.length - 1) {
