@@ -253,7 +253,7 @@ function renderHome() {
     <div class="history-section">
       <h3>📊 ${currentUser}'s Test History</h3>
       ${history.length === 0 ? '<div class="history-empty">No tests taken yet — take a practice test!</div>' :
-        history.slice(0, 10).map(h => `
+        history.map(h => `
           <div class="history-item">
             <div class="history-left">
               <span class="history-type">${catLabel(h.cat)} Exam</span>
@@ -262,7 +262,6 @@ function renderHome() {
             <span class="history-score ${h.pct >= 80 ? 'pass' : 'fail'}">${h.pct}% (${h.score}/${h.total})</span>
           </div>`).join('')}
     </div>
-    <div class="reset-section"><button class="reset-btn" onclick="resetProgress()">Reset ${currentUser}'s Progress</button></div>
     <div class="footer">
       Iowa Pesticide Applicator Exam Study App<br>
       Built for <strong>Ag-Grow Plus</strong> employees<br>
@@ -270,15 +269,6 @@ function renderHome() {
       <a href="https://www.extension.iastate.edu/psep/" target="_blank">ISU Extension PSEP</a><br>
       Core: ${QUESTIONS.core.length} questions · 3T: ${QUESTIONS.turf3t.length} questions
     </div>`;
-}
-
-function resetProgress() {
-  if (confirm(`Reset all progress for ${currentUser}? This cannot be undone.`)) {
-    localStorage.removeItem(userKey('core'));
-    localStorage.removeItem(userKey('turf'));
-    localStorage.removeItem(userKey('history'));
-    renderHome();
-  }
 }
 
 // ===== FLASHCARD MODE =====
