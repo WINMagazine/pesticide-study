@@ -99,6 +99,30 @@ h1{font-size:1.3rem;text-align:center;color:var(--primary-dark);margin-bottom:4p
 /* Reset btn */
 .reset-section{text-align:center;margin-top:16px}
 .reset-btn{background:none;border:1px solid #e5e7eb;border-radius:6px;padding:6px 14px;font-size:.75rem;color:#999;cursor:pointer}
+
+/* User picker */
+.user-picker{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70dvh}
+.user-picker h2{font-size:1.1rem;color:var(--primary-dark);margin-bottom:4px}
+.user-picker p{font-size:.82rem;color:var(--text-light);margin-bottom:20px}
+.user-grid{display:flex;flex-direction:column;gap:10px;width:100%}
+.user-btn{display:flex;align-items:center;gap:12px;padding:16px 20px;background:var(--card);border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .15s}
+.user-btn:hover,.user-btn:active{border-color:var(--primary);background:#f0fdf4}
+.user-avatar{width:40px;height:40px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem}
+.user-name{font-size:1rem;font-weight:600}
+.current-user{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--primary-dark);cursor:pointer;padding:4px 10px;border:1px solid var(--border);border-radius:20px;background:var(--card)}
+.current-user:hover{border-color:var(--primary)}
+
+/* Test history */
+.history-section{margin-top:20px}
+.history-section h3{font-size:.9rem;margin-bottom:10px;color:var(--primary-dark)}
+.history-item{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--card);border-radius:8px;margin-bottom:6px;border:1px solid var(--border);font-size:.82rem}
+.history-left{display:flex;flex-direction:column;gap:2px}
+.history-type{font-weight:600}
+.history-date{color:var(--text-light);font-size:.72rem}
+.history-score{font-weight:700;font-size:1rem}
+.history-score.pass{color:var(--correct)}
+.history-score.fail{color:var(--wrong)}
+.history-empty{text-align:center;color:#ccc;font-size:.82rem;padding:16px}
 </style>
 </head>
 <body>
@@ -108,12 +132,18 @@ h1{font-size:1.3rem;text-align:center;color:var(--primary-dark);margin-bottom:4p
 const $ = s => document.querySelector(s);
 const app = $('#app');
 
+// ===== USERS =====
+const USERS = ['Peyton', 'Trent', 'Hunter', 'Holden', 'Jacob'];
+let currentUser = localStorage.getItem('pest_current_user') || '';
+
+function userKey(key) { return 'pest_' + currentUser + '_' + key; }
+
 // ===== STORAGE =====
 function getProgress(cat) {
-  try { return JSON.parse(localStorage.getItem('pest_' + cat) || '{}'); } catch { return {}; }
+  try { return JSON.parse(localStorage.getItem(userKey(cat)) || '{}'); } catch { return {}; }
 }
 function saveProgress(cat, data) {
-  localStorage.setItem('pest_' + cat, JSON.stringify(data));
+  localStorage.setItem(userKey(cat), JSON.stringify(data));
 }
 function getMastery(cat) {
   const p = getProgress(cat);
@@ -121,6 +151,15 @@ function getMastery(cat) {
   if (!total) return 0;
   const mastered = Object.values(p).filter(v => v >= 2).length;
   return Math.round(mastered / total * 100);
+}
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem(userKey('history')) || '[]'); } catch { return []; }
+}
+function saveTestResult(cat, score, total, pct) {
+  const history = getHistory();
+  history.unshift({ cat, score, total, pct, date: new Date().toISOString() });
+  if (history.length > 50) history.length = 50;
+  localStorage.setItem(userKey('history'), JSON.stringify(history));
 }
 
 // ===== SHUFFLE =====
@@ -133,13 +172,50 @@ function shuffle(arr) {
   return a;
 }
 
+// ===== USER PICKER =====
+function renderUserPicker() {
+  app.innerHTML = `
+    <div class="user-picker">
+      <h1>Iowa Pesticide Applicator</h1>
+      <p class="subtitle">Ag-Grow Plus Employee Study App</p>
+      <h2>Who's studying?</h2>
+      <p>Select your name to track your progress</p>
+      <div class="user-grid">
+        ${USERS.map(u => `
+          <div class="user-btn" onclick="selectUser('${u}')">
+            <div class="user-avatar">${u[0]}</div>
+            <span class="user-name">${u}</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function selectUser(name) {
+  currentUser = name;
+  localStorage.setItem('pest_current_user', name);
+  renderHome();
+}
+
+function switchUser() {
+  localStorage.removeItem('pest_current_user');
+  currentUser = '';
+  renderUserPicker();
+}
+
 // ===== HOME =====
 function renderHome() {
+  if (!currentUser) { renderUserPicker(); return; }
   const coreM = getMastery('core');
   const turfM = getMastery('turf');
+  const history = getHistory();
+  const catLabel = c => c === 'core' ? 'Core' : c === 'turf' ? '3T Turf' : 'Mixed';
+  const fmtDate = d => { const dt = new Date(d); return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); };
   app.innerHTML = `
-    <h1>Iowa Pesticide Applicator</h1>
-    <p class="subtitle">Ag-Grow Plus Employee Study App</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h1 style="margin:0">Iowa Pesticide Applicator</h1>
+      <button class="current-user" onclick="switchUser()">👤 ${currentUser} ▾</button>
+    </div>
+    <p class="subtitle" style="margin-bottom:16px">Ag-Grow Plus Employee Study App</p>
     <div class="progress-section">
       <div class="progress-row">
         <span class="progress-label">Core</span>
@@ -174,7 +250,19 @@ function renderHome() {
         <div class="mode-info"><h3>Mixed Practice Test</h3><p>Both Core + 3T combined</p></div>
       </div>
     </div>
-    <div class="reset-section"><button class="reset-btn" onclick="resetProgress()">Reset All Progress</button></div>
+    <div class="history-section">
+      <h3>📊 ${currentUser}'s Test History</h3>
+      ${history.length === 0 ? '<div class="history-empty">No tests taken yet — take a practice test!</div>' :
+        history.slice(0, 10).map(h => `
+          <div class="history-item">
+            <div class="history-left">
+              <span class="history-type">${catLabel(h.cat)} Exam</span>
+              <span class="history-date">${fmtDate(h.date)}</span>
+            </div>
+            <span class="history-score ${h.pct >= 80 ? 'pass' : 'fail'}">${h.pct}% (${h.score}/${h.total})</span>
+          </div>`).join('')}
+    </div>
+    <div class="reset-section"><button class="reset-btn" onclick="resetProgress()">Reset ${currentUser}'s Progress</button></div>
     <div class="footer">
       Iowa Pesticide Applicator Exam Study App<br>
       Built for <strong>Ag-Grow Plus</strong> employees<br>
@@ -185,9 +273,10 @@ function renderHome() {
 }
 
 function resetProgress() {
-  if (confirm('Reset all study progress? This cannot be undone.')) {
-    localStorage.removeItem('pest_core');
-    localStorage.removeItem('pest_turf');
+  if (confirm(`Reset all progress for ${currentUser}? This cannot be undone.`)) {
+    localStorage.removeItem(userKey('core'));
+    localStorage.removeItem(userKey('turf'));
+    localStorage.removeItem(userKey('history'));
     renderHome();
   }
 }
@@ -358,6 +447,7 @@ function renderResults() {
   const total = quizQuestions.length;
   const pct = Math.round(correct / total * 100);
   const pass = pct >= 80;
+  saveTestResult(quizCat, correct, total, pct);
   const catLabel = quizCat === 'core' ? 'Core Exam' : quizCat === 'turf' ? '3T Exam' : 'Mixed Exam';
   const letters = ['A', 'B', 'C', 'D'];
 
